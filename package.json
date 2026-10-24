@@ -7,21 +7,26 @@
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./client": "./lib/client.js",
     "./package.json": "./package.json",
     "./cordis.patch.yml": "./cordis.patch.yml"
   },
   "files": [
     "lib/index.js",
+    "lib/client.js",
     "lib/*.js",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs"
+    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs"
   },
   "license": "MIT",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
     }
   },
   "engines": {
