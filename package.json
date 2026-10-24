@@ -15,10 +15,11 @@
     "lib/index.js",
     "lib/client.js",
     "lib/*.js",
+    "prompts/APPEND_SYSTEM.md",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs"
+    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs"
   },
   "license": "MIT",
   "dsh": {
