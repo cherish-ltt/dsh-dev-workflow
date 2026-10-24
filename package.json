@@ -21,7 +21,12 @@
   "scripts": {
     "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs"
   },
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
+  "author": "cherish-ltt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cherish-ltt/dsh-dev-workflow.git"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
