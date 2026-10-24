@@ -17,6 +17,9 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # 版本说明校验要读 git 历史（tag 与 commit 区间），浅克隆会失败
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
