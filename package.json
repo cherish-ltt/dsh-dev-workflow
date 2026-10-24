@@ -1,0 +1,44 @@
+{
+  "name": "dsh-dev-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH 版 dev 工作流：/dev-pre-check、/dev-feat、/dev-fix、/dev-refactor、/dev-test 与 dev_ask 结构化提问工具",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/*.js",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs"
+  },
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "dsh": "^0.2.1-rc.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5",
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.2"
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+.dsh-home/
+.pnpm-store/
+.tmp/
