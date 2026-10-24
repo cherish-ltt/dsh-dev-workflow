@@ -1,0 +1,43 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Show runtime versions
+        run: |
+          node --version
+          npm --version
+      - name: Verify tag matches package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "tag ${GITHUB_REF_NAME} 与 package.json 的 v${version} 不一致" >&2
+            exit 1
+          fi
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Test
+        run: npm test
+      - name: Preview package contents
+        run: npm pack --dry-run
+      - name: Publish
+        run: npm publish
