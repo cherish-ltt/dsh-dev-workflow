@@ -1,4 +1,4 @@
-# dsh-dev-workflow
+# @ghyper9023/dsh-dev-workflow
 
 > 把 [pi-dev-workflow](https://github.com/cherish-ltt/pi-dev-workflow) 的 dev 工作流移植到 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)：`/dev-pre-check`、`/dev-feat`、`/dev-fix`、`/dev-refactor`、`/dev-test` 与 `dev_ask` 结构化提问工具。
 
@@ -20,19 +20,23 @@
 
 ## 安装
 
-插件通过 profile 的 `dependencies` 以 link 方式挂载：
+```bash
+dsh plugin --profile <profile> add @ghyper9023/dsh-dev-workflow
+```
+
+`add` 会自动把包写入 profile 的 `dependencies` 与 `dsh.profile.bundles`。也可手动 link 本地目录，编辑 `~/.dsh/profiles/<profile>/package.json`：
 
 ```json
 {
   "dependencies": {
-    "dsh-dev-workflow": "link:/path/to/dsh-dev-workflow"
+    "@ghyper9023/dsh-dev-workflow": "link:/path/to/dsh-dev-workflow"
   },
   "dsh": {
     "profile": {
       "bundles": [
         "@deepseek-ai/dsh-base",
         "@deepseek-ai/dsh-web-app",
-        "dsh-dev-workflow"
+        "@ghyper9023/dsh-dev-workflow"
       ]
     }
   }
@@ -164,7 +168,11 @@
 ```
 dsh-dev-workflow/
 ├── package.json                 # 包元数据与 DSH 配置
+├── package-lock.json            # CI 与发布使用 npm ci
 ├── cordis.patch.yml             # bundle 插入声明
+├── .github/workflows/
+│   ├── ci.yml                   # push/PR 到 main 触发测试
+│   └── publish.yml              # 推送 v* tag 触发 npm 发布
 ├── prompts/
 │   └── APPEND_SYSTEM.md         # 追加到系统提示词末尾的全局规则
 ├── lib/
@@ -200,11 +208,30 @@ dsh-dev-workflow/
 ## 开发
 
 ```bash
+npm ci
 npm test        # 四套测试
 node --check lib/index.js
 ```
 
 测试覆盖命令流程、工具 schema、客户端渲染与提示词追加语义，共 46 项检查。
+
+## CI 与发布
+
+| 工作流 | 触发 | 行为 |
+|---|---|---|
+| `ci.yml` | push / PR 到 `main` | Node 22 与 24 双版本：`npm ci` → 语法检查 → `npm test` |
+| `publish.yml` | 推送 `v*` tag | 校验 tag 与 `package.json` 版本一致 → 测试 → `npm publish` |
+
+发布使用 npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（GitHub OIDC），仓库中不保存长期 token。
+
+### 发布步骤
+
+```bash
+npm version patch          # 或 minor / major，自动打 tag
+git push --follow-tags
+```
+
+`publish.yml` 要求：npm 包已存在且已配置 Trusted Publisher（GitHub 仓库 `cherish-ltt/dsh-dev-workflow`、工作流文件 `publish.yml`、环境 `npm`）；`repository.url` 与仓库地址一致；Runner 为 GitHub 托管；Node >= 22.14.0、npm >= 11.5.1。
 
 ## License
 
