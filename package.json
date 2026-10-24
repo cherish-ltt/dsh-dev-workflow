@@ -1,7 +1,6 @@
 {
-  "name": "dsh-dev-workflow",
+  "name": "@ghyper9023/dsh-dev-workflow",
   "version": "0.1.0",
-  "private": true,
   "description": "DSH 版 dev 工作流：/dev-pre-check、/dev-feat、/dev-fix、/dev-refactor、/dev-test 与 dev_ask 结构化提问工具",
   "type": "module",
   "main": "lib/index.js",
@@ -26,6 +25,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cherish-ltt/dsh-dev-workflow.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dsh": {
     "bundle": {
