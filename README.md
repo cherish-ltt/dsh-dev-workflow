@@ -4,6 +4,14 @@
 
 提示词文本从 pi 逐字移植，周边代码基于 DSH 原生 API 重写。
 
+## 安装
+
+```bash
+dsh plugin --profile web add @ghyper9023/dsh-dev-workflow
+```
+
+装完重启对应客户端生效。把 `web` 换成你的 profile 名即可（内置模板：`web`、`headless`、`acp`、`sdk`）。`desktop` 由 Electron 应用独占管理，需手动编辑 profile，见[安装细节](#安装细节)。
+
 ## 包含内容
 
 | 能力 | 形式 | 说明 |
@@ -18,13 +26,11 @@
 
 不在范围内：`/grill`、`/prd`、git 命令、skills、主题。
 
-## 安装
+## 安装细节
 
-```bash
-dsh plugin --profile <profile> add @ghyper9023/dsh-dev-workflow
-```
+`add` 会自动把包写入 profile 的 `dependencies` 与 `dsh.profile.bundles`，无需手工编辑。需要 pnpm 在 PATH 中。
 
-`add` 会自动把包写入 profile 的 `dependencies` 与 `dsh.profile.bundles`。也可手动 link 本地目录，编辑 `~/.dsh/profiles/<profile>/package.json`：
+也可手动 link 本地目录，编辑 `~/.dsh/profiles/<profile>/package.json`：
 
 ```json
 {
@@ -43,7 +49,7 @@ dsh plugin --profile <profile> add @ghyper9023/dsh-dev-workflow
 }
 ```
 
-`desktop` 是 Electron 应用独占的保留 profile，`dsh plugin --profile desktop add` 会被拒绝，需直接编辑 `~/.dsh/profiles/desktop/package.json`。改完重启客户端生效。
+手动编辑 `~/.dsh/profiles/desktop/package.json` 时，`dependencies` 与 `dsh.profile.bundles` 两处都要加上包名；若用 link 挂载，还需在 `node_modules/@ghyper9023/` 下建立指向本仓库的软链接。改完重启客户端生效。
 
 ## `/dev-pre-check`
 
