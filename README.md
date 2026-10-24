@@ -1,8 +1,14 @@
 # @ghyper9023/dsh-dev-workflow
 
-> 把 [pi-dev-workflow](https://github.com/cherish-ltt/pi-dev-workflow) 的 dev 工作流移植到 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)：`/dev-pre-check`、`/dev-feat`、`/dev-fix`、`/dev-refactor`、`/dev-test` 与 `dev_ask` 结构化提问工具。
+> [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的 dev 工作流插件：`/dev-pre-check`、`/dev-feat`、`/dev-fix`、`/dev-refactor`、`/dev-test` 与 `dev_ask` 结构化提问工具。
 
-提示词文本从 pi 逐字移植，周边代码基于 DSH 原生 API 重写。
+## 核心理念
+
+依靠可控的输入需求确认 + 必须的输出字段确认，来维持 LLM 在多次相同/不同任务中工作稳定且不偏离。
+
+- **输入侧可控**：动手前先只读探查真实代码，再用固定字段复述意图，经用户确认后才执行；不确定项当场做成带选项的提问，不靠猜
+- **输出侧必填**：每轮收尾按固定字段交付（改了什么、怎么验证的、前后对比），字段缺一即视为未完成
+- **稳定性来源**：两端都被固定格式约束，同一任务重复执行、不同任务交替执行都不会漂移
 
 ## 安装
 
@@ -23,8 +29,6 @@ dsh plugin --profile web add @ghyper9023/dsh-dev-workflow
 | `/dev-test` | 斜杠命令 | 测试补充 |
 | `dev_ask` | 工具 | 结构化提问：需求澄清、方案取舍、分轮追问 |
 | 追加系统提示词 | 提示词 section | 加载即生效的全局行为规则 |
-
-不在范围内：`/grill`、`/prd`、git 命令、skills、主题。
 
 ## 安装细节
 
@@ -178,7 +182,11 @@ dsh-dev-workflow/
 ├── cordis.patch.yml             # bundle 插入声明
 ├── .github/workflows/
 │   ├── ci.yml                   # push/PR 到 main 触发测试
-│   └── publish.yml              # 推送 v* tag 触发 npm 发布
+│   ├── publish.yml              # 推送 v* tag 触发 npm 发布
+│   └── release.yml              # 推送 v* tag 创建 GitHub Release
+├── .version/
+│   ├── UNRELEASED.md            # 未发布变更
+│   └── RELEASE-v0.1.1.md        # 版本日志，同时作为 Release 正文
 ├── prompts/
 │   └── APPEND_SYSTEM.md         # 追加到系统提示词末尾的全局规则
 ├── lib/
@@ -195,31 +203,19 @@ dsh-dev-workflow/
     ├── commands.test.mjs        # 命令与意图确认流程
     ├── tool-schema.test.mjs     # 工具 schema 与输出校验
     ├── client.test.mjs          # 客户端渲染逻辑
-    └── append-system.test.mjs   # 提示词追加语义
+    ├── append-system.test.mjs   # 提示词追加语义
+    └── version.test.mjs         # 版本日志完整性与 commit 覆盖
 ```
-
-## 与 pi 版本的差异
-
-| 方面 | pi-dev-workflow | 本插件 |
-|---|---|---|
-| 命令注册 | `pi.registerCommand` | `ctx.commands.register` |
-| 提问 | `uiSelect` / `uiInput` | `ctx.userQuestions.ask`（同卡多题） |
-| 提示词注入 | `before_agent_start` 钩子拼接 | `ctx.systemPrompt.section` 独立 section |
-| 工具定义 | 扩展内声明 | `defineTool` + JSON Schema 校验 |
-| 选项预览 | TUI 高亮详情 | 客户端插件渲染 Markdown 右侧面板 |
-| 界面 | 终端 TUI | Web 图形界面 |
-
-提示词文本（意图复述指令、只读探查规则、身份职责、验收标准、`APPEND_SYSTEM.md`）与 pi 版本逐字一致。
 
 ## 开发
 
 ```bash
 npm ci
-npm test        # 四套测试
+npm test        # 五套测试
 node --check lib/index.js
 ```
 
-测试覆盖命令流程、工具 schema、客户端渲染与提示词追加语义，共 46 项检查。
+测试覆盖命令流程、工具 schema、客户端渲染、提示词追加语义与版本日志完整性，共 52 项检查。
 
 ## CI 与发布
 
@@ -227,6 +223,7 @@ node --check lib/index.js
 |---|---|---|
 | `ci.yml` | push / PR 到 `main` | Node 22 与 24 双版本：`npm ci` → 语法检查 → `npm test` |
 | `publish.yml` | 推送 `v*` tag | 校验 tag 与 `package.json` 版本一致 → 测试 → `npm publish` |
+| `release.yml` | 推送 `v*` tag | 读取 `.version/RELEASE-<tag>.md` 作为正文创建 GitHub Release |
 
 发布使用 npm [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（GitHub OIDC），仓库中不保存长期 token。
 
