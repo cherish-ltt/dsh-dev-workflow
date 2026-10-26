@@ -1,6 +1,6 @@
 {
   "name": "@ghyper9023/dsh-dev-workflow",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "DSH 版 dev 工作流：/dev-pre-check、/dev-feat、/dev-fix、/dev-refactor、/dev-test 与 dev_ask 结构化提问工具",
   "type": "module",
   "main": "lib/index.js",
