@@ -159,5 +159,19 @@ const type = (id, text) => () => ({ answers: [{ id, selected: [], custom: text }
   check("dev_ask 无 UI 返回 cancelled", value.cancelled === true && value.answers[0].answer === null);
 }
 
+// ---- 9. 命令被宿主中止：不能静默当成「用户取消」
+// 复刻线上事故：代理在 dev_ask 上等待时命令 signal 被中止，作答与复述随后才到达。
+// 此时命令必须报 aborted，而不是 cancelled；用户主动取消（signal 未中止）仍走 cancelled。
+{
+  const { ctx, bus } = makeCtx([]);
+  const controller = new AbortController();
+  const agent = makeAgent(bus, "复述");
+  setTimeout(() => controller.abort(), 0);
+  const out = await runPreCheck(ctx, agent, "任务", controller.signal);
+  check("中止时不发送执行提示词", agent.sent.length === 1, String(agent.sent.length));
+  check("中止上报 aborted", out.aborted === true && out.cancelled === undefined, JSON.stringify(out));
+  check("中止不误报取消", !out.notices.join("|").includes("已取消"), out.notices.join("|"));
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILED`);
 process.exit(failures === 0 ? 0 : 1);
