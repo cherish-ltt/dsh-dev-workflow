@@ -15,10 +15,11 @@
     "lib/client.js",
     "lib/*.js",
     "prompts/APPEND_SYSTEM.md",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "skills/"
   ],
   "scripts": {
-    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs && node test/version.test.mjs"
+    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs && node test/skills.test.mjs && node test/version.test.mjs"
   },
   "license": "MIT OR Apache-2.0",
   "author": "cherish-ltt",
@@ -39,20 +40,27 @@
     }
   },
   "engines": {
-    "dsh": "^0.2.1-rc.2"
+    "dsh": "0.2.1-rc.5"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.5",
-    "@deepseek-ai/dsh-commands": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.2"
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.5"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.0.5",
-    "@deepseek-ai/dsh-commands": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.2"
+    "@deepseek-ai/dsh-commands": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-user-questions": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.5"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.5"
   }
 }

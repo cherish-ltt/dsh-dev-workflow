@@ -2,6 +2,10 @@ import { runPreCheck } from "../lib/pre-check.js";
 import { runDevCommand, devTypes } from "../lib/dev-prompts.js";
 import { createDevAskTool } from "../lib/dev-ask.js";
 import { buildPreCheckPrompt, buildExecutionPrompt } from "../lib/prompts.js";
+import assert from "node:assert/strict";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 let failures = 0;
 function check(label, cond, extra = "") {
@@ -43,12 +47,13 @@ function makeAgent(bus, reply, cwd = "/tmp") {
   return agent;
 }
 
-function makeCtx(answers) {
+function makeCtx(answers, skills) {
   const queue = [...answers];
   const bus = makeBus();
   const ctx = {
     asked: [],
     get(key) {
+      if (key === "skills") return skills;
       if (key !== "userQuestions") return undefined;
       return {
         ask: async (request) => {
@@ -171,6 +176,161 @@ const type = (id, text) => () => ({ answers: [{ id, selected: [], custom: text }
   check("中止时不发送执行提示词", agent.sent.length === 1, String(agent.sent.length));
   check("中止上报 aborted", out.aborted === true && out.cancelled === undefined, JSON.stringify(out));
   check("中止不误报取消", !out.notices.join("|").includes("已取消"), out.notices.join("|"));
+}
+
+const skillDefinition = (content) => ({
+  name: "prompt-check", description: "意图确认", provider: "test", source: "runtime",
+  invocation: { modelInvocable: true, userInvocable: true }, content,
+});
+
+// 所有命令使用最新技能正文，取消时都不能投递执行任务。
+for (const devType of [undefined, ...devTypes()]) {
+  const lookups = [];
+  const skills = { get: async (...args) => { lookups.push(args); return skillDefinition("唯一技能正文：按用户目标探索"); } };
+  const { ctx, bus } = makeCtx([pick("intent-confirm", "取消")], skills);
+  const agent = makeAgent(bus, "复述", "/tmp/skill-project");
+  const signal = new AbortController().signal;
+  const out = devType
+    ? await runDevCommand(ctx, agent, "原始任务", signal, devType)
+    : await runPreCheck(ctx, agent, "原始任务", signal);
+  assert.equal(out.cancelled, true);
+  assert.equal(agent.sent.length, 1);
+  assert.ok(agent.sent[0].includes("唯一技能正文：按用户目标探索"));
+  assert.ok(!agent.sent[0].includes("## 内置 Prompt Check"));
+  assert.ok(agent.sent[0].includes("最终确认由命令提供交互卡"));
+  assert.deepEqual(lookups, [["prompt-check", { cwd: "/tmp/skill-project", scope: agent, signal }]]);
+  assert.ok(!out.notices.join("|").includes("内置"));
+  check(`${devType?.command ?? "dev-pre-check"} 使用技能且取消不执行`, true);
+}
+
+// 每轮重新加载，不把旧正文缓存成第二套固定指令。
+{
+  let calls = 0;
+  const { ctx, bus } = makeCtx([
+    pick("intent-confirm", "否 — 意图不正确，我要补充说明后重新分析"),
+    type("intent-note", "只改文档"),
+    pick("intent-confirm", "是 — 意图正确，开始执行"),
+  ], { get: async () => skillDefinition(`技能正文版本-${++calls}`) });
+  const agent = makeAgent(bus, "已核实意图");
+  await runPreCheck(ctx, agent, "原始任务", undefined);
+  assert.ok(agent.sent[0].includes("技能正文版本-1"));
+  assert.ok(agent.sent[1].includes("技能正文版本-2") && !agent.sent[1].includes("技能正文版本-1"));
+  assert.ok(agent.sent[1].includes("只改文档"));
+  assert.ok(agent.sent[2].includes("原始任务") && agent.sent[2].includes("已核实意图"));
+  check("修正后重新读取技能并保留任务与确认意图", true);
+}
+
+for (const [label, skills, warning] of [
+  ["服务缺失", undefined, "未找到 prompt-check 技能"],
+  ["技能缺失", { get: async () => undefined }, "未找到 prompt-check 技能"],
+  ["读取失败", { get: async () => { throw new Error("EACCES: denied"); } }, "EACCES: denied"],
+  ["正文为空", { get: async () => skillDefinition(" \n") }, "正文为空"],
+  ["模型调用禁用", { get: async () => ({ ...skillDefinition("禁止使用的技能正文"), invocation: { modelInvocable: false, userInvocable: true } }) }, "禁止模型调用"],
+]) {
+  const { ctx, bus } = makeCtx([pick("intent-confirm", "是 — 意图正确，开始执行")], skills);
+  const agent = makeAgent(bus, "保底意图");
+  const out = await runPreCheck(ctx, agent, "原始任务", undefined);
+  assert.equal(out.cancelled, false);
+  assert.ok(out.notices.join("|").includes(warning));
+  assert.ok(agent.sent[0].includes(warning) && agent.sent[0].includes("报告开头向用户说明"));
+  assert.ok(agent.sent[0].includes("## 内置 Prompt Check"));
+  assert.ok(agent.sent[0].includes("## 重新复述用户 Prompt") && agent.sent[0].includes("使用对象、目标、范围、约束和验收"));
+  assert.ok(!agent.sent[0].includes("禁止使用的技能正文"));
+  check(`${label} 明示原因后使用新版保底`, true);
+}
+
+{
+  const controller = new AbortController();
+  const { ctx, bus } = makeCtx([], { get: async () => {
+    controller.abort();
+    throw new Error("aborted lookup");
+  } });
+  const agent = makeAgent(bus, "不应产生复述");
+  const out = await runPreCheck(ctx, agent, "任务", controller.signal);
+  assert.equal(out.aborted, true);
+  assert.equal(agent.sent.length, 0);
+  assert.ok(!out.notices.join("|").includes("内置"));
+  check("技能读取中止不降级、不发送消息", true);
+}
+
+for (const devType of devTypes()) {
+  const { ctx, bus } = makeCtx([pick("intent-confirm", "是 — 意图正确，开始执行")], {
+    get: async () => skillDefinition("新版需求指导"),
+  });
+  const agent = makeAgent(bus, "确认的验收口径");
+  const out = await runDevCommand(ctx, agent, "原始任务", undefined, devType);
+  assert.equal(out.cancelled, false);
+  assert.equal(agent.sent.length, 2);
+  assert.equal(ctx.asked.length, 1);
+  assert.ok(agent.sent[1].startsWith(`[${devType.command}]`));
+  assert.ok(agent.sent[1].includes("确认的验收口径") && agent.sent[1].includes("原始任务"));
+  assert.ok(!agent.sent[1].includes("经我确认后再写代码"));
+  check(`${devType.command} 保留类型与验收且不重复确认计划`, true);
+}
+
+{
+  const cwd = await mkdtemp(join(tmpdir(), "dsh-dev-workflow-cwd-"));
+  try {
+    await writeFile(join(cwd, "Cargo.toml"), "[package]\nname = 'fixture'\n");
+    const lookups = [];
+    const { ctx, bus } = makeCtx([pick("intent-confirm", "是 — 意图正确，开始执行")], {
+      get: async (_name, options) => { lookups.push(options.cwd); return skillDefinition("当前项目技能"); },
+    });
+    const originalGet = ctx.get;
+    ctx.get = (name) => name === "workingDirectory" ? { get: () => cwd } : originalGet(name);
+    const agent = makeAgent(bus, "确认", "/original-project");
+    await runDevCommand(ctx, agent, "任务", undefined, devTypes()[0]);
+    assert.deepEqual(lookups, [cwd]);
+    assert.ok(agent.sent[1].includes("Rust") && agent.sent[1].includes("cargo test"));
+    check("切换工作目录后技能与验收探测均使用当前项目", true);
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+}
+
+for (const withNote of [false, true]) {
+  const controller = new AbortController();
+  const abortingAnswer = (id, text) => () => {
+    controller.abort();
+    return { answers: [{ id, selected: withNote ? [] : [text], custom: withNote ? text : "" }] };
+  };
+  const { ctx, bus } = makeCtx(withNote ? [
+    pick("intent-confirm", "是 + 补充 — 补充说明后直接开工（不重新复述）"),
+    abortingAnswer("intent-note", "补充"),
+  ] : [abortingAnswer("intent-confirm", "是 — 意图正确，开始执行")]);
+  const agent = makeAgent(bus, "复述");
+  const out = await runPreCheck(ctx, agent, "任务", controller.signal);
+  assert.equal(out.aborted, true);
+  assert.equal(agent.sent.length, 1);
+  check(`${withNote ? "补充" : "确认"}答案与中止同时返回时不执行`, true);
+}
+
+{
+  const controller = new AbortController();
+  const { ctx, bus } = makeCtx([() => { controller.abort(); return undefined; }]);
+  const agent = makeAgent(bus, "不应执行");
+  const out = await runDevCommand(ctx, agent, "", controller.signal, devTypes()[0]);
+  assert.equal(out.aborted, true);
+  assert.equal(agent.sent.length, 0);
+  check("输入任务时宿主中止不误报取消", true);
+}
+
+{
+  const controller = new AbortController();
+  const { ctx, bus } = makeCtx([() => { controller.abort(); return undefined; }]);
+  const agent = makeAgent(bus, "不应执行");
+  agent.followup = (message) => agent.sent.push(message);
+  const now = Date.now;
+  let time = now();
+  Date.now = () => (time += 31 * 60_000);
+  try {
+    const out = await runPreCheck(ctx, agent, "任务", controller.signal);
+    assert.equal(out.aborted, true);
+    assert.equal(agent.sent.length, 1);
+    check("超时重试问卷中止不误报取消", true);
+  } finally {
+    Date.now = now;
+  }
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILED`);
