@@ -33,14 +33,17 @@ function makeAgent(bus, reply, cwd = "/tmp") {
     followup(msg) {
       sent.push(msg.content[0].text);
       agent.status = "running";
+      bus.emit(session, { type: "turn/start", data: { turn: sent.length } });
+      bus.emit(session, { type: "user/message", data: msg });
       setTimeout(() => {
         agent.status = "idle";
         bus.emit(session, {
           type: "assistant/message",
           seq: sent.length,
           time: Date.now() + 1,
-          data: { turn: 1, step: 1, message: { content: [{ type: "text", text: reply }] } },
+          data: { turn: sent.length, step: 1, message: { content: [{ type: "text", text: reply }] } },
         });
+        bus.emit(session, { type: "turn/end", data: { turn: sent.length, reason: { kind: "completed" } } });
       }, 0);
     },
   };
@@ -59,7 +62,7 @@ function makeCtx(answers, skills) {
         ask: async (request) => {
           const next = queue.shift();
           if (next === undefined) throw new Error("unexpected ask: " + JSON.stringify(request.questions[0].question));
-          ctx.asked.push(request.questions[0].question);
+          ctx.asked.push(request.questions[0]);
           return next(request);
         },
       };
@@ -80,6 +83,10 @@ const type = (id, text) => () => ({ answers: [{ id, selected: [], custom: text }
   check("pre-check 接受后发送执行提示词", out.cancelled === false && agent.sent.length === 2);
   check("pre-check 首条为复述提示词", agent.sent[0].startsWith("[pre-check]"));
   check("pre-check 次条为执行提示词", agent.sent[1].startsWith("[execute]") && agent.sent[1].includes("复述：要实现登录"));
+  assert.equal(Object.hasOwn(ctx.asked[0], "detail"), false);
+  assert.equal(Object.hasOwn(ctx.asked[0], "intent"), false);
+  assert.ok(!JSON.stringify(ctx.asked[0]).includes("复述：要实现登录"));
+  check("pre-check 确认卡不重复报告，执行保留完整意图", true);
   check("pre-check 通知文案", out.notices.join("|").includes("意图已确认，开始执行"), out.notices.join("|"));
 }
 
@@ -262,6 +269,9 @@ for (const devType of devTypes()) {
   assert.equal(out.cancelled, false);
   assert.equal(agent.sent.length, 2);
   assert.equal(ctx.asked.length, 1);
+  assert.equal(Object.hasOwn(ctx.asked[0], "detail"), false);
+  assert.equal(Object.hasOwn(ctx.asked[0], "intent"), false);
+  assert.ok(!JSON.stringify(ctx.asked[0]).includes("确认的验收口径"));
   assert.ok(agent.sent[1].startsWith(`[${devType.command}]`));
   assert.ok(agent.sent[1].includes("确认的验收口径") && agent.sent[1].includes("原始任务"));
   assert.ok(!agent.sent[1].includes("经我确认后再写代码"));

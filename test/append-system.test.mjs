@@ -43,11 +43,11 @@ fiber.update({ appendSystem: false });
 await fiber.await();
 check("关闭追加时原提示词完全保留", renderPrompt(await root.systemPrompt.assemble({})) === before);
 assert.deepEqual(root.commands.list(agent), commands);
-assert.equal(commands.length, 5);
+assert.equal(commands.length, 6);
 assert.ok(root.tools.get("dev_ask"));
 assert.deepEqual(await root.skills.list(), skills);
 assert.equal(skills.length, 3);
-console.log("PASS 关闭追加不影响五个命令、工具和三个 Skill");
+console.log("PASS 关闭追加不影响六个命令、工具和三个 Skill");
 
 fiber.update({ appendSystem: true });
 await fiber.await();

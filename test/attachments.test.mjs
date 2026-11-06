@@ -76,12 +76,15 @@ try {
 				this.sent.push(message);
 				if (!message.content[0].text.startsWith("[pre-check]")) return;
 				this.status = "running";
+				root.emit("session/event", this.session, { type: "turn/start", data: { turn: this.sent.length } });
+				root.emit("session/event", this.session, { type: "user/message", data: message });
 				setTimeout(() => {
 					this.status = "idle";
 					root.emit("session/event", this.session, {
 						type: "assistant/message", time: Date.now() + 1,
-						data: { message: { content: [{ type: "text", text: `Report ${this.sent.length}` }] } },
+						data: { turn: this.sent.length, message: { content: [{ type: "text", text: `Report ${this.sent.length}` }] } },
 					});
+					root.emit("session/event", this.session, { type: "turn/end", data: { turn: this.sent.length, reason: { kind: "completed" } } });
 				}, 0);
 			},
 		};
