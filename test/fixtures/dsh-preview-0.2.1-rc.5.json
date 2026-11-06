@@ -1,0 +1,30 @@
+{
+  "source": "@deepseek-ai/dsh-web-frontend@0.2.1-rc.5/dist/assets/index-BXV-oxvX.js: MarkdownText non-streaming renderer gU",
+  "question": {
+    "header": "预览",
+    "question": "选择组合？",
+    "multiSelect": true,
+    "options": [
+      { "label": "甲", "description": "第一个方案", "preview": "#### 选项 2\n\n甲中的普通标题正文" },
+      { "label": "乙", "description": "第二个方案", "preview": "乙预览正文" },
+      { "label": "丙", "description": "无预览" }
+    ]
+  },
+  "detail": "`dsh-dev-ask-preview-v1`\n\n#### `dsh-dev-ask-option-1`\n\n#### 选项 2\n\n甲中的普通标题正文\n\n#### `dsh-dev-ask-option-2`\n\n乙预览正文",
+  "rendered": [
+    ["p", ["code", "dsh-dev-ask-preview-v1"]], "\n",
+    ["h4", ["code", "dsh-dev-ask-option-1"]], "\n",
+    ["h4", "选项 2"], "\n",
+    ["p", "甲中的普通标题正文"], "\n",
+    ["h4", ["code", "dsh-dev-ask-option-2"]], "\n",
+    ["p", "乙预览正文"]
+  ],
+  "legacy": {
+    "detail": "[dev_ask 选项预览](#dsh-dev-ask-preview-v1)\n\n#### [选项 1](#dsh-dev-ask-option-1)\n\n甲预览",
+    "rendered": [
+      ["p", "dev_ask 选项预览"], "\n",
+      ["h4", "选项 1"], "\n",
+      ["p", "甲预览"]
+    ]
+  }
+}
