@@ -42,7 +42,7 @@ DSH 会检查插件声明的兼容范围；不要用 `alpha` 或强制忽略兼�
 | `prompt-check` | Skill | 先探索真实项目，再复述需求并等待确认 |
 | `project-audit-review` | Skill | 验证项目问题并交付 Issue，不修复正式代码 |
 | `issue-to-pr` | Skill | 检查协作状态、认领 Issue、修复验证并交付 PR |
-| 追加系统提示词 | 提示词 section | 加载即生效的新版八节全局行为规则 |
+| 追加系统提示词 | 提示词 section | 默认开启，可独立关闭的新版八节全局行为规则 |
 
 ## 安装细节
 
@@ -207,6 +207,16 @@ Desktop 可使用其插件界面或内置命令管理已初始化的 profile。�
 ## 追加系统提示词
 
 `prompts/APPEND_SYSTEM.md` 在插件加载时注册为一个独立的 prompt section，追加到系统提示词末尾，原有提示词逐字保留。
+
+`appendSystem` 默认为 `true`。若已有个人或组织规则，可在 profile 的 `cordis.patch.yml` 为插件配置 `false`，保留五个工作流命令、`dev_ask` 和三个内置 Skill：
+
+```yaml
+- id: dev-workflow
+  config:
+    appendSystem: false
+```
+
+配置按宿主的配置更新及插件重新加载流程生效；重新设为 `true` 或移除该配置项即可恢复默认追加。值必须是布尔值，字符串 `"false"` 等无效值会明确报错。该开关只控制本插件的追加 section，不删除历史消息、不修改 Skill 正文，也不解除 `/dev-*` 的意图确认要求；不保证在途命令能无中断切换。
 
 使用新版八节规则：基本原则、思考流程、执行流程、编码规范、Debug 规范、Git 规范、最终报告、最高优先级。最终报告要求结果、自我 Review 和可观察的前后对比；未验证的预期必须标明。全文见 [`prompts/APPEND_SYSTEM.md`](prompts/APPEND_SYSTEM.md)，不包含本机路径或额外配置引用。
 
