@@ -140,7 +140,7 @@ try {
 	await entry;
 	assert.deepEqual((await root.skills.list()).map((skill) => skill.name), names);
 	assert.deepEqual(root.commands.list(agent).map((command) => command.name), [
-		"dev-feat", "dev-fix", "dev-pre-check", "dev-refactor", "dev-test",
+		"dev-feat", "dev-fix", "dev-pre-check", "dev-refactor", "dev-resume", "dev-test",
 	]);
 	assert.ok(root.tools.get("dev_ask"));
 	const entrySkill = await root.skills.get("prompt-check");
@@ -152,7 +152,7 @@ try {
 	const reloadedEntry = root.plugin(workflow);
 	await reloadedEntry;
 	assert.equal((await root.skills.list()).length, 3);
-	assert.equal(root.commands.list(agent).length, 5);
+	assert.equal(root.commands.list(agent).length, 6);
 	await reloadedEntry.dispose();
 	console.log("PASS real plugin entry mounts its skill child and permits optional registry reads");
 	console.log("\nALL PASS");
