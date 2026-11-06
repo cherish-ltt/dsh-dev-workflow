@@ -298,7 +298,7 @@ const checkedState = () => checkboxes.map((button) => button.getAttribute("aria-
 checkboxes[1].fire("focus");
 observers.forEach((observer) => observer.callback());
 check("多选后焦点预览不锁定首个勾选项", multiParagraphs[1].style.display === "" && multiParagraphs[0].style.display === "none" && checkedState() === "true,true,false");
-checkboxes[2].fire("pointerenter");
+checkboxes[2].fire("pointermove");
 check("浏览未选项不改变勾选集合", multiParagraphs[2].style.display === "" && checkedState() === "true,true,false");
 checkboxes[1].setAttribute("aria-checked", "false");
 checkboxes[1].fire("click");
@@ -337,7 +337,7 @@ multi.children[0].replaceChildren(...refreshed.childNodes);
 observers.forEach((observer) => observer.callback());
 const refreshedParagraphs = multi.children[0].querySelectorAll("p").slice(1);
 check("原详情节点重绘后重建预览分组", refreshedParagraphs[0].style.display === "none" && refreshedParagraphs[1].style.display === "");
-multi.children[1].querySelectorAll('[role="checkbox"]')[0].fire("pointerenter");
+multi.children[1].querySelectorAll('[role="checkbox"]')[0].fire("pointermove");
 check("重绘后预览操作作用于当前正文", refreshedParagraphs[0].style.display === "" && refreshedParagraphs[1].style.display === "none");
 multi.children[0].replaceChildren(el("div", {}, el("h4", {}, "选项 1"), el("p", {}, "切题后的普通报告")));
 observers.forEach((observer) => observer.callback());
@@ -364,8 +364,16 @@ check("官方渲染结果的行内代码标识可识别", renderedBody.dataset.d
 check("官方渲染结果中同名普通标题保持可见", renderedHeadings[0].style.display === "none" && renderedHeadings[1].textContent === "选项 2" && renderedHeadings[1].style.display === "");
 renderedButtons[1].fire("focus");
 check("官方渲染结果可逐项浏览且不改变多选", renderedParagraphs[0].style.display === "none" && renderedParagraphs[1].style.display === "" && renderedButtons.map((button) => button.getAttribute("aria-checked")).join(",") === "true,true,false");
-renderedButtons[2].fire("pointerenter");
+renderedButtons[2].fire("pointermove");
 check("官方渲染结果无预览选项收起右栏", renderedDetail.style.display === "none");
+renderedButtons[2].fire("focus");
+renderedButtons[0].fire("pointerenter");
+check("收栏布局触发鼠标边界事件时保留无预览项焦点", renderedDetail.style.display === "none" && renderedButtons.map((button) => button.getAttribute("aria-checked")).join(",") === "true,true,false");
+renderedButtons[1].fire("focus");
+renderedButtons[2].fire("pointerenter");
+check("展栏布局触发鼠标边界事件时保留报告焦点", renderedDetail.style.display === "" && renderedParagraphs[0].style.display === "none" && renderedParagraphs[1].style.display === "" && renderedButtons.map((button) => button.getAttribute("aria-checked")).join(",") === "true,true,false");
+renderedButtons[0].fire("pointermove");
+check("焦点浏览后实际移动鼠标仍可切换预览", renderedParagraphs[0].style.display === "" && renderedParagraphs[1].style.display === "none" && renderedButtons.map((button) => button.getAttribute("aria-checked")).join(",") === "true,true,false");
 const legacyBody = cardBody(null);
 legacyBody.children[0].replaceChildren(el("div", {}, ...previewFixture.legacy.rendered.map(renderedNode)));
 bodies.push(legacyBody);
@@ -389,7 +397,7 @@ check("移除卡片后释放每卡观察器", !observers[removedSelectionIndex].
 check("移除卡片后恢复布局和正文", removedBody.dataset.dshDevAskPanel === undefined && removedDetail.dataset.dshDevAskPreview === undefined && removedBody.querySelectorAll("*").every((node) => node.dataset.dshDevAskHidden === undefined && node.style.display !== "none"));
 removedButtons[0].fire("click");
 removedButtons[1].fire("focus");
-check("移除卡片后仅保留宿主监听器", hostClicks === 1 && removedButtons.every((button) => ["pointerenter", "focus", "click"].every((type) => (button.listeners.get(type)?.size ?? 0) === (button === removedButtons[0] && type === "click" ? 1 : 0))) && removedDetail.style.display !== "none");
+check("移除卡片后仅保留宿主监听器", hostClicks === 1 && removedButtons.every((button) => ["pointermove", "focus", "click"].every((type) => (button.listeners.get(type)?.size ?? 0) === (button === removedButtons[0] && type === "click" ? 1 : 0))) && removedDetail.style.display !== "none");
 
 bodies.push(removedBody);
 observers[0].callback();
