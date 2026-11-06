@@ -19,7 +19,7 @@
     "skills/"
   ],
   "scripts": {
-    "test": "node test/commands.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs && node test/skills.test.mjs && node test/version.test.mjs"
+    "test": "node test/commands.test.mjs && node test/attachments.test.mjs && node test/tool-schema.test.mjs && node test/client.test.mjs && node test/append-system.test.mjs && node test/skills.test.mjs && node test/version.test.mjs"
   },
   "license": "MIT OR Apache-2.0",
   "author": "cherish-ltt",
