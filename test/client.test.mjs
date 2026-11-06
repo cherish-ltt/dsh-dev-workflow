@@ -270,6 +270,15 @@ check("从选项标题开始的报告保持完整", headingReport.dataset.dshDev
 check("普通历史详情不被隐藏", ordinaryHistory.style.display !== "none");
 check("专属预览历史载荷被隐藏", previewHistory.style.display === "none");
 
+const reusedHistory = el("span", { class: "detail" }, previewHistory.textContent);
+reusedHistory.style.display = "inline";
+transcripts.push(reusedHistory);
+observers[0].callback();
+check("历史节点复用前隐藏专属载荷", reusedHistory.style.display === "none");
+reusedHistory.childNodes[0].value = "复用后的普通完整报告";
+observers.filter((observer) => observer.options.characterData).forEach((observer) => observer.callback());
+check("历史节点原地更新为普通正文后恢复显示", reusedHistory.style.display === "inline" && reusedHistory.dataset.dshDevAskHidden === undefined && reusedHistory.textContent === "复用后的普通完整报告");
+
 const collision = cardBody(["预览甲", "预览乙"]);
 const collisionRoot = collision.children[0].children[0];
 collisionRoot.childNodes.splice(3, 0, el("h4", {}, "选项 2"), el("p", {}, "甲中的合法选项标题正文"));
